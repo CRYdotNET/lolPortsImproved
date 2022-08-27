@@ -1,4 +1,4 @@
-import asyncio
+import curio
 import json
 import socket
 import subprocess
@@ -40,11 +40,11 @@ async def trier(startP, endP):
             if port in checkedPorts:
                 continue
             checkedPorts.append(port)
-            result = await portcheck(port)
-            Ports = {port : result}
+            result = portcheck(port)
+            Ports = {port: result}
 
     except KeyboardInterrupt:
-        print("YOu pressed Ctrl+C")
+        print("You pressed Ctrl+C")
         sys.exit()
 
     except socket.gaierror:
@@ -55,21 +55,22 @@ async def trier(startP, endP):
         print("Couldn't connect to Server")
         sys.exit()
 
+
 async def main():
-    #The following doesn't actually work properly yet, still executing all requests in sequence rather than concurrently
-    #TODO: Fix the trier() and the portChecker() to run concurrently and not block the event loop
-    await asyncio.gather(
-        trier(1,249),
-        trier(250,499),
-        trier(500,749),
-        trier(750,1025)
-    )
-    file = open("portlog.txt",w)
+    # The following doesn't actually work properly yet, still executing all requests in sequence rather than concurrently
+    # TODO: Fix the trier() and the portChecker() to run concurrently and not block the event loop
+    await curio.block_in_thread(trier(1, 249)),
+    await curio.block_in_thread(trier(250, 499))
+    await curio.block_in_thread(trier(500, 749))
+    await curio.block_in_thread(trier(750, 999))
+    await curio.block_in_thread(trier(1000, 1025))
+    file = open("portlog.txt", w)
     json.dump(Ports, file, indent=1)
     file.flush()
     file.close()
 
-asyncio.run(main())
+
+curio.run(main())
 
 timeEnd = datetime.now()
 
